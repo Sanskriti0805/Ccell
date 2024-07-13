@@ -1,25 +1,44 @@
 const express = require('express');
+const session = require('express-session');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const session = require('express-session');
+
 const app = express();
 const port = 3000;
 
-// Replace with your Google OAuth credentials
-const GOOGLE_CLIENT_ID = '930981639502-3oc5kdmjlq7agvishsfgjou4udcs5cdv.apps.googleusercontent.com';
-const GOOGLE_CLIENT_SECRET = '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';
-const CALLBACK_URL = 'http://localhost:3000/auth/google/callback';
+// Your Google OAuth credentials
+const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID';
+const GOOGLE_CLIENT_SECRET = 'YOUR_GOOGLE_CLIENT_SECRET';
+
+// Dummy database access function for retrieving image URL by ID
+const db = {
+  getImageUrl: (id) => {
+    return 'https://placeholder-image.com/640x480'; // Placeholder for now
+  }
+};
+
+// Configure session middleware
+app.use(session({
+  secret: 'your-session-secret',
+  resave: false,
+  saveUninitialized: true
+}));
+
+// Initialize Passport and restore authentication state, if any, from the session
+app.use(passport.initialize());
+app.use(passport.session());
 
 passport.use(new GoogleStrategy({
   clientID: GOOGLE_CLIENT_ID,
   clientSecret: GOOGLE_CLIENT_SECRET,
-  callbackURL: CALLBACK_URL
+  callbackURL: '/auth/google/callback'
 },
-(accessToken, refreshToken, profile, cb) => {
-  if (profile.emails[0].value.endsWith('.lnmiit.ac.in')) {
-    return cb(null, profile);
+function (accessToken, refreshToken, profile, done) {
+  const email = profile.emails[0].value;
+  if (email.endsWith('@lnmiit.ac.in')) {
+    return done(null, profile);
   } else {
-    return cb(new Error('Invalid user'));
+    return done(new Error('Invalid user'));
   }
 }));
 
@@ -31,53 +50,28 @@ passport.deserializeUser((obj, done) => {
   done(null, obj);
 });
 
-app.use(session({ secret: 'your_secret_key', resave: false, saveUninitialized: true }));
-app.use(passport.initialize());
-app.use(passport.session());
-
 app.get('/auth/google',
   passport.authenticate('google', { scope: ['profile', 'email'] })
 );
 
-app.get('/auth/google/callback', 
-  passport.authenticate('google', { failureRedirect: '/login' }),
+app.get('/auth/google/callback',
+  passport.authenticate('google', { failureRedirect: '/' }),
   (req, res) => {
     res.redirect('/');
   }
 );
 
-app.get('/', (req, res) => {
-  if (req.isAuthenticated()) {
-    res.send(`Hello, ${req.user.displayName}`);
-  } else {
-    res.send('Hello, World!');
-  }
-});
-
-// rn existing code to retrieve image URL from the database
-const db = {
-  getImageUrl(id) {
-    return 'https://placeholder-image.com/640x480'; // Placeholder for now
-  }
-};
-
+// Protect this route with Google OAuth 2.0 authentication
 app.get('/image/:id', (req, res) => {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
-
-  try {
-    const { id } = req.params;
-    const imageUrl = db.getImageUrl(id);
-
-    if (imageUrl) {
-      res.json({ image: imageUrl });
-    } else {
-      res.status(404).json({ error: 'Image not found' });
-    }
-  } catch (error) {
-    console.error('Error fetching image data:', error);
-    res.status(500).json({ error: 'Internal server error' });
+  const { id } = req.params;
+  const imageUrl = db.getImageUrl(id);
+  if (imageUrl) {
+    res.json({ image: imageUrl });
+  } else {
+    res.status(404).json({ error: 'Image not found' });
   }
 });
 
