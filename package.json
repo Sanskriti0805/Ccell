@@ -15,6 +15,7 @@
     "@types/passport-google-oauth20": "^2.0.16"
   },
   "scripts": {
-    "build": ""
+    "start": "node ./api/index.js"
+    
   }
 }
