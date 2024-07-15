@@ -7,8 +7,8 @@ const app = express();
 const port = 3000;
 
 // Your Google OAuth credentials
-const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID';
-const GOOGLE_CLIENT_SECRET = 'YOUR_GOOGLE_CLIENT_SECRET';
+const GOOGLE_CLIENT_ID = '930981639502-3oc5kdmjlq7agvishsfgjou4udcs5cdv.apps.googleusercontent.com';
+const GOOGLE_CLIENT_SECRET = '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';
 
 // Dummy database access function for retrieving image URL by ID
 const db = {
@@ -31,7 +31,7 @@ app.use(passport.session());
 passport.use(new GoogleStrategy({
   clientID: GOOGLE_CLIENT_ID,
   clientSecret: GOOGLE_CLIENT_SECRET,
-  callbackURL: '/auth/google/callback'
+  callbackURL: 'https://ccell-6bbfwlqdr-sanskritis-projects-1c538732.vercel.app'
 },
 function (accessToken, refreshToken, profile, done) {
   const email = profile.emails[0].value;
