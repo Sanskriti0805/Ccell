@@ -2,6 +2,7 @@ const express = require('express');
 const session = require('express-session');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const dotenv = require('dotenv');
 
 const app = express();
 const port = 3000;
@@ -16,6 +17,19 @@ const db = {
     return 'https://placeholder-image.com/640x480'; // Placeholder for now
   }
 };
+const validApiKeys = [
+  process.env.API_KEY // Use the API key from the .env file
+];
+
+function checkApiKey(req, res, next) {
+  const apiKey = req.headers['x-api-key'];
+  if (validApiKeys.includes(apiKey)) {
+    next();
+  } else {
+    res.status(403).json({ error: 'Forbidden: Invalid API Key' });
+  }
+}
+
 
 // Configure session middleware
 app.use(session({
